@@ -576,6 +576,29 @@
         startCamera();
       }
     };
+    // 画面タップ/クリックで全画面表示を切替
+    const appContainer = document.querySelector('.app-container');
+
+    appContainer.addEventListener('click', (e) => {
+      // デモボタンなどの操作時は全画面化を発動させない
+      if (e.target.tagName === 'BUTTON') return;
+
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        // 全画面表示を開始
+        if (appContainer.requestFullscreen) {
+          appContainer.requestFullscreen();
+        } else if (appContainer.webkitRequestFullscreen) { /* Safari用 */
+          appContainer.webkitRequestFullscreen();
+        }
+      } else {
+        // 全画面表示を解除して元に戻す
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari用 */
+          document.webkitExitFullscreen();
+        }
+      }
+    });
   </script>
 </body>
 
