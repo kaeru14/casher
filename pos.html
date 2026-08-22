@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>レジ端末 (pos.html)</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; background: #f8f9fa; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .item-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .item-name { flex: 2; }
+    .item-price { flex: 1; }
+    .remove-btn { background: #ff3b30; color: white; border: none; border-radius: 4px; padding: 0 12px; cursor: pointer; }
+    .add-btn { background: #34c759; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-bottom: 16px; }
+    .action-btn { width: 100%; padding: 12px; margin-top: 10px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; }
+    .totals { border-top: 2px solid #ddd; padding-top: 10px; margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>レジ会計入力</h2>
+    
+    <!-- 品目追加リスト -->
+    <div id="itemContainer">
+      <div class="item-row">
+        <input type="text" class="item-name" placeholder="商品名" value="りんご">
+        <input type="number" class="item-price" placeholder="価格" value="100">
+        <button class="remove-btn" onclick="removeItem(this)">×</button>
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addItem()">＋ 商品を追加</button>
+
+    <div class="totals">
+      <p>小計 (税抜): ¥<span id="subtotal">100</span></p>
+      <p>合計 (税込): ¥<span id="grandtotal">110</span></p>
+    </div>
+
+    <button id="startBtn" class="action-btn" style="background: #007aff; color: white;">会計開始 (work: true)</button>
+    <button id="resetBtn" class="action-btn" style="background: #8e8e93; color: white;">リセット (work: false)</button>
+    <p id="statusMsg" style="margin-top: 12px; text-align: center;"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
+      authDomain: "call-system-838c7.firebaseapp.com",
+      projectId: "call-system-838c7",
+      storageBucket: "call-system-838c7.firebasestorage.app",
+      messagingSenderId: "47666494925",
+      appId: "1:47666494925:web:aeade4fb7652b8fec6d884",
+      measurementId: "G-974KELC8MW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const docRef = doc(db, "casher", "pineapple");
+
+    // 1. ページ再読み込み時に Firebase のデータを初期化
+    window.addEventListener("load", async () => {
+      await setDoc(docRef, {
+        price: 0,
+        work: false,
+        settle: false,
+        token: ""
+      });
+      calculateTotal();
+      document.getElementById("statusMsg").innerText = "初期化しました (待機中)";
+    });
+
+    // 動的行追加
+    window.addItem = function() {
+      const container = document.getElementById("itemContainer");
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <input type="text" class="item-name" placeholder="商品名">
+        <input type="number" class="item-price" placeholder="価格" value="0">
+        <button class="remove-btn" onclick="removeItem(this)">×</button>
+      `;
+      container.appendChild(row);
+      attachInputEvents();
+      calculateTotal();
+    };
+
+    // 動的行削除
+    window.removeItem = function(btn) {
+      btn.parentElement.remove();
+      calculateTotal();
+    };
+
+    // 計算処理
+    function calculateTotal() {
+      let subtotal = 0;
+      const priceInputs = document.querySelectorAll(".item-price");
+      priceInputs.forEach(input => {
+        subtotal += Number(input.value) || 0;
+      });
+
+      const grandTotal = Math.floor(subtotal * 1.1);
+      document.getElementById("subtotal").innerText = subtotal.toLocaleString();
+      document.getElementById("grandtotal").innerText = grandTotal.toLocaleString();
+      return subtotal;
+    }
+
+    function attachInputEvents() {
+      const inputs = document.querySelectorAll(".item-price");
+      inputs.forEach(input => {
+        input.oninput = calculateTotal;
+      });
+    }
+    attachInputEvents();
+
+    // 2. 会計開始
+    document.getElementById("startBtn").onclick = async () => {
+      const subtotal = calculateTotal();
+      const rows = document.querySelectorAll(".item-row");
+      
+      const payData = {
+        price: subtotal,
+        work: true,
+        settle: false,
+        token: Math.random().toString(36).substring(2, 10)
+      };
+
+      // 動的に各品目を設定 (例: { "りんご": "100" })
+      rows.forEach(row => {
+        const name = row.querySelector(".item-name").value.trim();
+        const price = row.querySelector(".item-price").value;
+        if (name) {
+          payData[name] = price;
+        }
+      });
+
+      await setDoc(docRef, payData);
+      document.getElementById("statusMsg").innerText = "会計を開始しました";
+    };
+
+    // 3. リセット
+    document.getElementById("resetBtn").onclick = async () => {
+      await setDoc(docRef, {
+        price: 0,
+        work: false,
+        settle: false,
+        token: ""
+      });
+      document.getElementById("statusMsg").innerText = "リセットしました";
+    };
+
+    // 決済完了検知
+    onSnapshot(docRef, (snap) => {
+      if (snap.exists() && snap.data().settle === true) {
+        document.getElementById("statusMsg").innerText = "【完了】お支払いが完了しました！";
+      }
+    });
+  </script>
+</body>
+</html>

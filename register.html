@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>メンバー登録</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+    input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <h2>新規メンバー登録</h2>
+  <input type="text" id="userName" placeholder="ユーザー名 (例: test)">
+  <input type="number" id="balance" placeholder="初期残高 (例: 1000)" value="1000">
+  <button id="regBtn">登録する</button>
+  <p id="msg"></p>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
+      authDomain: "call-system-838c7.firebaseapp.com",
+      projectId: "call-system-838c7"
+    };
+
+    const db = getFirestore(initializeApp(firebaseConfig));
+
+    document.getElementById("regBtn").onclick = async () => {
+      const name = document.getElementById("userName").value.trim();
+      const balance = document.getElementById("balance").value;
+
+      if(!name) return alert("ユーザー名を入力してください");
+
+      // userコレクション直下に「name」のドキュメントを作成
+      await setDoc(doc(db, "user", name), {
+        name: name,
+        balance: String(balance), // 画像に合わせて文字列で保存
+        token: ""
+      });
+
+      document.getElementById("msg").innerText = `user/${name} を作成しました！`;
+    };
+  </script>
+</body>
+</html>

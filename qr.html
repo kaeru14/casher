@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>会員QRコード</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    #qrcode { display: flex; justify-content: center; margin: 20px 0; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 id="userName">読み込み中...</h2>
+    <p>残高: <span id="userBalance">-</span> 円</p>
+    <div id="qrcode"></div>
+    <p style="font-size: 12px; color: #888;">レジのカメラにかざしてください</p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
+      authDomain: "call-system-838c7.firebaseapp.com",
+      projectId: "call-system-838c7"
+    };
+
+    const db = getFirestore(initializeApp(firebaseConfig));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const nameParam = urlParams.get('name') || "test"; // 例: ?name=test
+    const userDocRef = doc(db, "user", nameParam);
+
+    async function init() {
+      const snap = await getDoc(userDocRef);
+      if (!snap.exists()) {
+        document.getElementById("userName").innerText = "ユーザーが見つかりません";
+        return;
+      }
+
+      const data = snap.data();
+      document.getElementById("userName").innerText = data.name;
+      document.getElementById("userBalance").innerText = Number(data.balance).toLocaleString();
+
+      // セキュリティ用ランダムトークン生成
+      const token = Math.random().toString(36).substring(2, 10);
+      
+      // DBへトークン保存
+      await updateDoc(userDocRef, { token: token });
+
+      // QRコードデータ構造: "test:トークン"
+      const qrText = `${data.name}:${token}`;
+      new QRCode(document.getElementById("qrcode"), {
+        text: qrText,
+        width: 180,
+        height: 180
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

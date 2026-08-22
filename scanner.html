@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客用会計画面 (スキャン最適化版)</title>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body,
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f5f5f7;
+    }
+
+    #orientation-warning {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      background-color: #1c1c1e;
+      color: #ffffff;
+      text-align: center;
+      padding: 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+    }
+
+    #orientation-warning .material-symbols-outlined {
+      font-size: 64px;
+      margin-bottom: 16px;
+      color: #ff9500;
+    }
+
+    @media (orientation: portrait) {
+      #orientation-warning {
+        display: flex;
+      }
+    }
+
+    .app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #checkout-screen {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    .cart-summary {
+      flex: 1;
+      background-color: #ffffff;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e5e5ea;
+    }
+
+    .header-title {
+      font-size: 1.2rem;
+      color: #8e8e93;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .item-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 16px;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px dashed #e5e5ea;
+      font-size: 1.1rem;
+    }
+
+    .cart-totals {
+      font-size: 1.1rem;
+      border-top: 2px solid #000;
+      padding-top: 12px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .grand-total {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #000000;
+      margin-top: 8px;
+    }
+
+    .payment-instructions {
+      flex: 1;
+      background-color: #f2f2f7;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .scanapp-container {
+      width: min(75vh, 90%);
+      height: min(75vh, 90%);
+      background-color: #000000;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      border: 3px solid #007aff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    /* 待機用表示枠 */
+    .standby-container {
+      width: min(75vh, 90%);
+      height: min(75vh, 90%);
+      background-color: #e5e5ea;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #8e8e93;
+    }
+
+    .standby-container .material-symbols-outlined {
+      font-size: 72px;
+      margin-bottom: 12px;
+    }
+
+    #scanapp-reader {
+      width: 100%;
+      height: 100%;
+    }
+
+    #scanapp-reader * {
+      border: none !important;
+    }
+
+    #scanapp-reader__dashboard,
+    #scanapp-reader__status_span,
+    #scanapp-reader__header_message {
+      display: none !important;
+    }
+
+    #scanapp-reader video {
+      object-fit: cover !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .instruction-text {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #1c1c1e;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sub-instruction {
+      font-size: 0.95rem;
+      color: #8e8e93;
+    }
+
+    .error-message {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      color: #ff3b30;
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    #completion-screen {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background-color: #34c759;
+      color: #ffffff;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .complete-icon {
+      font-size: 96px;
+      margin-bottom: 16px;
+    }
+
+    .complete-title {
+      font-size: 2.2rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .complete-details {
+      font-size: 1.2rem;
+      opacity: 0.9;
+    }
+
+    .demo-btn {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      padding: 6px 12px;
+      font-size: 12px;
+      background: #8e8e93;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      opacity: 0.5;
+      cursor: pointer;
+      z-index: 1000;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="orientation-warning">
+    <span class="material-symbols-outlined">screen_rotation</span>
+    <h2>画面を横向きにしてください</h2>
+    <p>このレジ画面は横向き表示専用です。</p>
+  </div>
+
+  <div class="app-container">
+    <div id="checkout-screen">
+      <div class="cart-summary">
+        <div class="header-title">
+          <span class="material-symbols-outlined">shopping_cart</span>
+          お買い上げ明細
+        </div>
+
+        <div class="item-list" id="cart-item-list">
+          <!-- 動的挿入 -->
+        </div>
+
+        <div class="cart-totals">
+          <div class="total-row">
+            <span>小計 (税抜)</span>
+            <span id="text-subtotal">¥0</span>
+          </div>
+          <div class="total-row">
+            <span>消費税 (10%)</span>
+            <span id="text-tax">¥0</span>
+          </div>
+          <div class="total-row grand-total">
+            <span>合計</span>
+            <span id="text-total">¥0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="payment-instructions">
+        <!-- カメラ表示枠 -->
+        <div class="scanapp-container" id="camera-box" style="display: none;">
+          <div id="scanapp-reader"></div>
+        </div>
+
+        <!-- 待機中表示枠 -->
+        <div class="standby-container" id="standby-box">
+          <span class="material-symbols-outlined">hourglass_empty</span>
+          <h2>待機中です...</h2>
+        </div>
+
+        <div class="instruction-text" id="text-payment-status">
+          <span class="material-symbols-outlined" style="font-size: 28px; color: #007aff;">qr_code_scanner</span>
+          <span id="status-message">レジの操作をお待ちください</span>
+        </div>
+        <div class="sub-instruction" id="text-payment-method">各種QR決済対応</div>
+
+        <div class="error-message" id="error-message">
+          <span class="material-symbols-outlined">error</span>
+          <span id="error-text">エラーが発生しました。もう一度お試しください。</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="completion-screen">
+      <span class="material-symbols-outlined complete-icon">check_circle</span>
+      <div class="complete-title" id="text-complete-title">お支払いが完了しました</div>
+      <div class="complete-details">
+        <span>お支払い金額: </span>
+        <span id="text-complete-amount">¥0</span>
+      </div>
+      <div class="complete-details" style="margin-top: 8px; font-size: 1rem;">
+        レシートをお受け取りください
+      </div>
+    </div>
+  </div>
+
+  <button class="demo-btn" onclick="toggleScreen()">画面切替デモ</button>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, runTransaction, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
+      authDomain: "call-system-838c7.firebaseapp.com",
+      projectId: "call-system-838c7",
+      storageBucket: "call-system-838c7.firebasestorage.app",
+      messagingSenderId: "47666494925",
+      appId: "1:47666494925:web:aeade4fb7652b8fec6d884",
+      measurementId: "G-974KELC8MW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const casherRef = doc(db, "casher", "pineapple");
+
+    const html5Qrcode = new Html5Qrcode("scanapp-reader");
+    const config = {
+      fps: 20,
+      qrbox: (w, h) => ({ width: w, height: h }),
+      aspectRatio: 1.0,
+      videoConstraints: {
+        facingMode: "environment",
+        width: { min: 640, ideal: 1280 },
+        height: { min: 480, ideal: 720 }
+      },
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+
+    let isScannerRunning = false;
+    let isProcessing = false;
+    let currentGrandTotal = 0;
+    let currentItemDetails = "";
+
+    // Firebase の監視機能
+    onSnapshot(casherRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+
+      // ① 決済が完了した場合（settle: true）
+      if (data.settle === true) {
+        if (!isCompleted) {
+          showCompletionScreen();
+        }
+        if (isScannerRunning) {
+          stopCamera();
+        }
+        return;
+      }
+
+      // ② 会計中の場合（work: true かつ settle: false）
+      if (data.work === true) {
+        resetToCheckoutScreen();
+
+        document.getElementById("camera-box").style.display = "flex";
+        document.getElementById("standby-box").style.display = "none";
+        document.getElementById("status-message").innerText = "QRコードをカメラにかざしてください";
+
+        // データの読み込み＆描画
+        countdata(data);
+
+        if (!isScannerRunning) {
+          startCamera();
+        }
+      }
+      // ③ 待機中の場合（work: false）
+      else {
+        resetToCheckoutScreen();
+
+        // 前の人の明細や金額をクリアして見えないようにする
+        clearCartDisplay();
+
+        document.getElementById("camera-box").style.display = "none";
+        document.getElementById("standby-box").style.display = "flex";
+        document.getElementById("status-message").innerText = "レジの操作をお待ちください";
+
+        if (isScannerRunning) {
+          stopCamera();
+        }
+      }
+    });
+
+    // 表示データを消去する関数
+    function clearCartDisplay() {
+      document.getElementById("cart-item-list").innerHTML = "";
+      document.getElementById("text-subtotal").innerText = "¥0";
+      document.getElementById("text-tax").innerText = "¥0";
+      document.getElementById("text-total").innerText = "¥0";
+      document.getElementById("text-complete-amount").innerText = "¥0";
+      currentGrandTotal = 0;
+      currentItemDetails = "";
+    }
+    // 画面を通常のチェックアウト画面（待機含む）に戻す共通関数
+    function resetToCheckoutScreen() {
+      document.getElementById('checkout-screen').style.display = 'flex';
+      document.getElementById('completion-screen').style.display = 'none';
+      document.getElementById("error-message").style.display = "none";
+      isCompleted = false;
+      isProcessing = false;
+    }
+    function startCamera() {
+      html5Qrcode.start(
+        { facingMode: "environment" },
+        config,
+        onScanSuccess
+      ).then(() => {
+        isScannerRunning = true;
+        isProcessing = false;
+      }).catch(err => {
+        console.error("カメラの起動失敗:", err);
+      });
+    }
+
+    function stopCamera() {
+      html5Qrcode.stop().then(() => {
+        isScannerRunning = false;
+      }).catch(err => {
+        console.error("カメラの停止失敗:", err);
+      });
+    }
+
+    function countdata(data) {
+      const priceExcludingTax = Number(data.price) || 0;
+
+      // システム用フィールド以外の購入アイテムを抽出
+      const systemKeys = ['price', 'work', 'settle', 'token'];
+      const goods = Object.keys(data)
+        .filter(key => !systemKeys.includes(key))
+        .map(key => `${key}:${data[key]}`);
+
+      const taxAmount = Math.floor(priceExcludingTax * 0.1);
+      currentGrandTotal = priceExcludingTax + taxAmount;
+      currentItemDetails = goods.join(", ");
+
+      const itemListElement = document.getElementById("cart-item-list");
+      itemListElement.innerHTML = "";
+
+      goods.forEach(item => {
+        const [name, value] = item.split(":");
+        const row = document.createElement("div");
+        row.className = "item-row";
+        row.innerHTML = `<span>${name}</span><span>¥${Number(value).toLocaleString()}</span>`;
+        itemListElement.appendChild(row);
+      });
+
+      document.getElementById("text-subtotal").innerText = `¥${priceExcludingTax.toLocaleString()}`;
+      document.getElementById("text-tax").innerText = `¥${taxAmount.toLocaleString()}`;
+      document.getElementById("text-total").innerText = `¥${currentGrandTotal.toLocaleString()}`;
+      document.getElementById("text-complete-amount").innerText = `¥${currentGrandTotal.toLocaleString()}`;
+    }
+
+    async function onScanSuccess(decodedText) {
+      if (isProcessing) return;
+
+      const errorMsgElement = document.getElementById("error-message");
+      const errorTextElement = document.getElementById("error-text");
+
+      // QR読み込みデータ (フォーマット: "ユーザー名:トークン")
+      const [userName, qrToken] = decodedText.split(":");
+
+      if (!userName || !qrToken) {
+        errorTextElement.innerText = "不正なQRコードフォーマットです";
+        errorMsgElement.style.display = "flex";
+        return;
+      }
+
+      isProcessing = true;
+      errorMsgElement.style.display = "none";
+
+      const userDocRef = doc(db, "user", userName);
+
+      try {
+        // トランザクション処理で残高引き落とし・トークン検証・履歴追加を同時実行
+        await runTransaction(db, async (transaction) => {
+          const userSnap = await transaction.get(userDocRef);
+          if (!userSnap.exists()) throw new Error("ユーザーが存在しません");
+
+          const userData = userSnap.data();
+
+          // 1. セキュリティ検証（ワンタイムトークン一致確認）
+          if (userData.token !== qrToken) {
+            throw new Error("無効または失効したQRコードです");
+          }
+
+          // 2. 残高チェック (文字列の残高を数値で計算)
+          const currentBalance = Number(userData.balance) || 0;
+          if (currentBalance < currentGrandTotal) {
+            throw new Error("残高が不足しています");
+          }
+
+          // 3. 残高引き落とし & ワンタイムトークン消去
+          const newBalance = String(currentBalance - currentGrandTotal);
+          transaction.update(userDocRef, {
+            balance: newBalance,
+            token: ""
+          });
+
+          // 4. レジ状態更新
+          transaction.update(casherRef, {
+            settle: true,
+          });
+
+          // 5. 利用履歴サブコレクションを追加
+          const historyRef = doc(collection(userDocRef, "history"));
+          transaction.set(historyRef, {
+            amount: currentGrandTotal,
+            items: currentItemDetails,
+            timestamp: serverTimestamp(),
+            info: "pineappleレジ決済"
+          });
+        });
+
+        console.log("決済成功");
+        stopCamera();
+        showCompletionScreen();
+
+      } catch (err) {
+        console.error("決済エラー:", err);
+        errorTextElement.innerText = err.message || "決済処理に失敗しました";
+        errorMsgElement.style.display = "flex";
+        isProcessing = false;
+      }
+    }
+
+    let isCompleted = false;
+    function showCompletionScreen() {
+      document.getElementById('checkout-screen').style.display = 'none';
+      document.getElementById('completion-screen').style.display = 'flex';
+      isCompleted = true;
+    }
+
+    window.toggleScreen = function () {
+      const checkoutScreen = document.getElementById('checkout-screen');
+      const completionScreen = document.getElementById('completion-screen');
+
+      if (!isCompleted) {
+        showCompletionScreen();
+      } else {
+        checkoutScreen.style.display = 'flex';
+        completionScreen.style.display = 'none';
+        document.getElementById("error-message").style.display = "none";
+        isCompleted = false;
+        isProcessing = false;
+        startCamera();
+      }
+    };
+  </script>
+</body>
+
+</html>
