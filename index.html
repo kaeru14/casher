@@ -1,11 +1,289 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayPay 支払い</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background-color: #fbfbfb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      color: #333;
+    }
+
+    .app-header {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      color: white;
+    }
+    .app-header h1 { font-size: 1.1rem; font-weight: bold; }
+    .app-header .material-symbols-outlined { font-size: 24px; cursor: pointer; }
+
+    .main-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 0 12px 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* PayPay Card Area */
+    .pay-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    /* Barcode Box */
+    .barcode-box {
+      width: 90%;
+      height: 60px;
+      margin: 0 auto 8px auto;
+      background: repeating-linear-gradient(
+        90deg,
+        #000 0px, #000 2px,
+        #fff 2px, #fff 4px,
+        #000 4px, #000 8px,
+        #fff 8px, #fff 10px,
+        #000 10px, #000 13px
+      );
+    }
+    .barcode-num { font-size: 0.8rem; letter-spacing: 2px; color: #555; margin-bottom: 12px; }
+
+    /* QR Code Box */
+    .qrcode-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    #qrcode { display: flex; justify-content: center; }
+    .qr-logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px;
+      height: 32px;
+      background-color: #ff3b30;
+      border-radius: 6px;
+      border: 2px solid white;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .timer-text { font-size: 0.8rem; color: #007aff; display: flex; justify-content: center; align-items: center; gap: 4px; margin-bottom: 16px; }
+
+    /* Balance / Point Rows */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background-color: #f9f9fb;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .info-row-left { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.9rem; }
+    .info-row-right { font-weight: bold; font-size: 1rem; color: #222; }
+
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+    }
+
+    /* Switch Style */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc; transition: .4s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #007aff; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Sub Button */
+    .sub-card-btn {
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* Bottom Action Area */
+    .bottom-box {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .camera-btn {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      color: white;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .camera-btn:active { background: rgba(255, 255, 255, 0.4); }
+  </style>
 </head>
 <body>
-    <p>システムのホームページ</p>
+
+  <!-- Header -->
+  <div class="app-header">
+    <span class="material-symbols-outlined">arrow_back_ios</span>
+    <h1>支払い</h1>
+    <span class="material-symbols-outlined">help</span>
+  </div>
+
+  <div class="main-container">
+    <!-- PayPay Card -->
+    <div class="pay-card">
+      <div class="qrcode-wrapper">
+        <div id="qrcode"></div>
+      </div>
+
+      <div class="timer-text">
+        <span>04:59</span>
+        <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>
+      </div>
+
+      <!-- 利用可能額 -->
+      <div class="info-row">
+        <span style="font-size: 0.85rem; color: #666;">利用可能額</span>
+        <span class="info-row-right">¥<span id="displayBalance">0</span></span>
+      </div>
+
+      <!-- 残高表示 -->
+      <div class="info-row" style="background: white; border: 1px solid #eee;">
+        <div class="info-row-left">
+          <span class="material-symbols-outlined" style="color:#007aff;">account_balance_wallet</span>
+          <div>
+            <div>残高</div>
+            <div style="font-size:0.75rem; color:#888; font-weight:normal;">20,000円</div>
+          </div>
+        </div>
+        <span class="material-symbols-outlined" style="color:#ccc;">chevron_right</span>
+      </div>
+
+      <!-- ポイント利用スイッチ -->
+      <div class="switch-row">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:#ff3b30; font-weight:bold;">P</span>
+          <span>ポイントを使う</span>
+          <span style="color:#888; font-size:0.8rem; margin-left:4px;">500 pt</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
+      authDomain: "call-system-838c7.firebaseapp.com",
+      projectId: "call-system-838c7"
+    };
+
+    const db = getFirestore(initializeApp(firebaseConfig));
+    const urlParams = new URLSearchParams(window.location.search);
+    const userNameParam = urlParams.get('name') || "test";
+
+    const casherRef = doc(db, "casher", "pineapple");
+    const userDocRef = doc(db, "user", userNameParam);
+
+    let initialMoney = null;
+
+    // 1. QRコード生成
+    new QRCode(document.getElementById("qrcode"), {
+      text: `${userNameParam}:paypay_qr`,
+      width: 140,
+      height: 140,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+
+    // 2. ユーザー残高の取得
+    async function fetchUserBalance() {
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        const bal = snap.data().balance || 0;
+        document.getElementById("displayBalance").innerText = Number(bal).toLocaleString();
+      }
+    }
+    fetchUserBalance();
+
+    // 3. 金額変更の監視 (moneyが変わったら success.html へ遷移)
+    onSnapshot(casherRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      const currentMoney = data.money;
+
+      // 初回読み込み時は金額を保持するのみ
+      if (initialMoney === null) {
+        initialMoney = currentMoney;
+        return;
+      }
+
+      // 金額が変更されたか、決済が完了した場合に success.html に自動遷移
+      if ((currentMoney !== undefined && currentMoney !== initialMoney && currentMoney > 0) || data.settle === true) {
+        window.location.href = `success.html?name=${encodeURIComponent(userNameParam)}`;
+      }
+    });
+
+  </script>
 </body>
 </html>
