@@ -9,7 +9,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body {
-      background-color: #fbfbfb;
+      background-color: #dcdcdc;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -146,9 +146,77 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
+    /* 履歴カード表示 */
+    .history-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .history-title {
+      font-weight: bold;
+      font-size: 1rem;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #333;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .history-item-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .history-store {
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: #222;
+    }
+    .history-date {
+      font-size: 0.75rem;
+      color: #888;
+    }
+    .history-amount {
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: #333;
+    }
+    .more-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      color: #007aff;
+      font-weight: bold;
+      font-size: 0.85rem;
+      padding-top: 12px;
+      margin-top: 8px;
+      border-top: 1px solid #f0f0f0;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+    }
+
     /* Bottom Action Area */
     .bottom-box {
-      margin-top: 10px;
+      margin-top: 4px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -184,19 +252,20 @@
   <div class="main-container">
     <!-- PayPay Card -->
     <div class="pay-card">
+
       <div class="qrcode-wrapper">
         <div id="qrcode"></div>
       </div>
 
       <div class="timer-text">
-        <span>04:59</span>
+        <span></span>
         <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>
       </div>
 
       <!-- 利用可能額 -->
       <div class="info-row">
         <span style="font-size: 0.85rem; color: #666;">利用可能額</span>
-        <span class="info-row-right">¥<span id="displayBalance">0</span></span>
+        <span class="info-row-right">¥<span id="displayBalance">20,500</span></span>
       </div>
 
       <!-- 残高表示 -->
@@ -204,7 +273,7 @@
         <div class="info-row-left">
           <span class="material-symbols-outlined" style="color:#007aff;">account_balance_wallet</span>
           <div>
-            <div>残高</div>
+            <div>PayPay残高</div>
             <div style="font-size:0.75rem; color:#888; font-weight:normal;">20,000円</div>
           </div>
         </div>
@@ -215,7 +284,7 @@
       <div class="switch-row">
         <div style="display:flex; align-items:center; gap:6px;">
           <span style="color:#ff3b30; font-weight:bold;">P</span>
-          <span>ポイントを使う</span>
+          <span>PayPayポイントを使う</span>
           <span style="color:#888; font-size:0.8rem; margin-left:4px;">500 pt</span>
         </div>
         <label class="switch">
@@ -225,11 +294,24 @@
       </div>
     </div>
 
-  </div>
+<!-- 支払い履歴エリア -->
+    <div class="history-card">
+      <div class="history-title">
+        <span class="material-symbols-outlined" style="color:#ff3b30; font-size:20px;">history</span>
+        利用履歴
+      </div>
+      <div class="history-list" id="historyList">
+        <div style="font-size:0.85rem; color:#888; text-align:center;">読み込み中...</div>
+      </div>
+      <button class="more-btn" id="showMoreBtn" style="display: none;">
+        <span>さらに表示</span>
+        <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
+      </button>
+    </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, getDoc, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
@@ -245,6 +327,7 @@
     const userDocRef = doc(db, "user", userNameParam);
 
     let initialMoney = null;
+    let allHistoryDocs = [];
 
     // 1. QRコード生成
     new QRCode(document.getElementById("qrcode"), {
@@ -266,19 +349,80 @@
     }
     fetchUserBalance();
 
-    // 3. 金額変更の監視 (moneyが変わったら success.html へ遷移)
+    // 3. 利用履歴の取得と描画
+    async function fetchHistory() {
+      const historyRef = collection(db, "user", userNameParam, "history");
+      const q = query(historyRef, orderBy("timestamp", "desc"));
+      
+      try {
+        const querySnap = await getDocs(q);
+        allHistoryDocs = querySnap.docs.map(d => d.data());
+        
+        if (allHistoryDocs.length === 0) {
+          document.getElementById("historyList").innerHTML = '<div style="font-size:0.85rem; color:#888; text-align:center;">履歴はありません</div>';
+          return;
+        }
+
+        // 初期表示：直近5件
+        renderHistoryList(5);
+
+        // 5件より多い場合は「さらに表示」ボタンを表示
+        if (allHistoryDocs.length > 5) {
+          document.getElementById("showMoreBtn").style.display = "flex";
+        }
+      } catch (err) {
+        console.error("履歴取得エラー:", err);
+        document.getElementById("historyList").innerHTML = '<div style="font-size:0.85rem; color:#888; text-align:center;">履歴の読み込みに失敗しました</div>';
+      }
+    }
+
+    function renderHistoryList(limitCount) {
+      const container = document.getElementById("historyList");
+      container.innerHTML = "";
+
+      const itemsToRender = limitCount ? allHistoryDocs.slice(0, limitCount) : allHistoryDocs;
+
+      itemsToRender.forEach(item => {
+        const amount = Number(item.amount || 0).toLocaleString();
+        let dateStr = "日時不明";
+        if (item.timestamp) {
+          const d = item.timestamp.toDate();
+          dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+        const storeName = item.storeName || "パイナップルレジ";
+
+        const itemEl = document.createElement("div");
+        itemEl.className = "history-item";
+        itemEl.innerHTML = `
+          <div class="history-item-left">
+            <div class="history-store">${storeName}</div>
+            <div class="history-date">${dateStr}</div>
+          </div>
+          <div class="history-amount">- ¥${amount}</div>
+        `;
+        container.appendChild(itemEl);
+      });
+    }
+
+    // 「さらに表示」ボタンタップで全件表示
+    document.getElementById("showMoreBtn").addEventListener("click", () => {
+      renderHistoryList(null); // 全件描画
+      document.getElementById("showMoreBtn").style.display = "none"; // ボタンを隠す
+    });
+
+    fetchHistory();
+
+    // 4. 金額変更の監視 (moneyが変わったら success.html へ遷移)
     onSnapshot(casherRef, (snapshot) => {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
       const currentMoney = data.money;
 
-      // 初回読み込み時は金額を保持するのみ
       if (initialMoney === null) {
         initialMoney = currentMoney;
         return;
       }
 
-      // 金額が変更されたか、決済が完了した場合に success.html に自動遷移
       if ((currentMoney !== undefined && currentMoney !== initialMoney && currentMoney > 0) || data.settle === true) {
         window.location.href = `success.html?name=${encodeURIComponent(userNameParam)}`;
       }
