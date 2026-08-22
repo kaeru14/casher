@@ -2,25 +2,158 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>会員QRコード</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>決済完了</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; }
-    #qrcode { display: flex; justify-content: center; margin: 20px 0; }
-    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: inline-block;}
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background-color: #f2f3f7; padding: 12px; max-width: 420px; margin: 0 auto; color: #222; }
+
+    /* Top Navigation */
+    .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; }
+    .nav-bar .material-symbols-outlined { font-size: 24px; color: #444; cursor: pointer; }
+
+    /* Card Box */
+    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+
+    /* Store Info Header */
+    .store-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .store-icon { width: 44px; height: 44px; background: #e60012; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 10px; }
+    .store-name { font-weight: bold; font-size: 1.2rem; }
+    .store-sub { font-size: 0.8rem; color: #777; }
+
+    /* Main Payment Amount */
+    .date-text { font-size: 0.85rem; color: #777; margin-bottom: 6px; }
+    .amount-box { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
+    .amount-num { font-size: 2.8rem; font-weight: 800; letter-spacing: -1px; }
+    .amount-unit { font-size: 1.4rem; font-weight: bold; }
+    .amount-search { font-size: 18px; color: #888; margin-left: 4px; }
+
+    /* Green Badge */
+    .status-badge {
+      display: inline-block;
+      background-color: #00b900;
+      color: white;
+      font-weight: bold;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    .detail-link { text-align: center; border-top: 1px solid #f0f0f0; padding-top: 12px; color: #007aff; font-weight: bold; font-size: 0.9rem; display: flex; justify-content: center; align-items: center; gap: 4px; }
+
+    /* Point Card */
+    .point-box { display: flex; align-items: center; justify-content: space-between; }
+    .point-left { display: flex; align-items: center; gap: 12px; }
+    .coin-icon { width: 24px; height: 24px; background: #ffd700; border-radius: 50%; border: 2px solid #ffaa00; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; color: #b87300; }
+    .point-title { font-size: 0.85rem; color: #555; }
+    .point-amount { font-size: 1.2rem; font-weight: bold; }
+
+    /* Coupon / Step Header */
+    .section-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.95rem; margin-bottom: 12px; }
+    .section-title { display: flex; align-items: center; gap: 6px; }
+
+    /* Coupon Banner List */
+    .coupon-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+    .coupon-card { min-width: 180px; background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; overflow: hidden; position: relative; }
+    .coupon-img { width: 100%; height: 90px; background: linear-gradient(135deg, #ff3b30, #ff9500); display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 0.8rem; text-align: center; padding: 8px; }
+    .coupon-footer { padding: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .coupon-rate { font-weight: bold; font-size: 1rem; }
+    .coupon-btn { background: #007aff; color: white; border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2 id="userName">読み込み中...</h2>
-    <p>残高: <span id="userBalance">-</span> 円</p>
-    <div id="qrcode"></div>
-    <p style="font-size: 12px; color: #888;">レジのカメラにかざしてください</p>
+
+  <!-- 画面上部ヘッダー -->
+  <div class="nav-bar">
+    <span class="material-symbols-outlined" onclick="history.back()">arrow_back</span>
+    <span class="material-symbols-outlined">share</span>
   </div>
 
+  <!-- 店舗・支払い金額メインカード -->
+  <div class="card">
+    <div class="store-header">
+      <div class="store-icon">BUHI</div>
+      <div>
+        <div class="store-name">まさとのお店</div>
+        <div class="store-sub">高須店</div>
+      </div>
+    </div>
+
+    <div class="date-text" id="payDate">2026年8月22日 16時00分</div>
+
+    <div class="amount-box">
+      <span class="amount-num" id="payAmount">0</span>
+      <span class="amount-unit">円</span>
+      <span class="material-symbols-outlined amount-search">search</span>
+    </div>
+
+    <div>
+      <span class="status-badge">支払い完了</span>
+    </div>
+
+    <div class="detail-link">
+      詳細を表示する
+      <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
+    </div>
+  </div>
+
+  <!-- 付与予定ポイントカード -->
+  <div class="card point-box">
+    <div class="point-left">
+      <div class="coin-icon">P</div>
+      <div>
+        <div class="point-title">付与予定のポイント</div>
+        <div class="point-amount"><span id="pointNum">0</span> pt <span style="font-size:0.75rem; color:#888; font-weight:normal;"></span></div>
+      </div>
+    </div>
+    <span class="material-symbols-outlined" style="color:#ccc;">chevron_right</span>
+  </div>
+
+  <!-- あなたにおすすめのクーポン
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="material-symbols-outlined" style="color:#007aff;">confirmation_number</span>
+        あなたにおすすめのクーポン
+      </div>
+      <span class="material-symbols-outlined" style="color:#ccc;">chevron_right</span>
+    </div>
+
+    <div class="coupon-list">
+      <div class="coupon-card">
+        <div class="coupon-img">Appleのサービス<br>最大2,000pt</div>
+        <div class="coupon-footer">
+          <div><span class="coupon-rate">10%</span><br><span style="font-size: 0.65rem; color:#888;">付与(最大)</span></div>
+          <button class="coupon-btn">獲得</button>
+        </div>
+      </div>
+
+      <div class="coupon-card">
+        <div class="coupon-img" style="background: linear-gradient(135deg, #4cd964, #5ac8fa);">コミックシーモア<br>キャンペーン</div>
+        <div class="coupon-footer">
+          <div><span class="coupon-rate">10%</span><br><span style="font-size: 0.65rem; color:#888;">付与(最大)</span></div>
+          <button class="coupon-btn">獲得</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+PayPayステップ
+  <div class="card">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="material-symbols-outlined" style="color:#007aff;">monetization_on</span>
+        PayPayステップ
+      </div>
+      <span class="material-symbols-outlined" style="color:#ccc;">chevron_right</span>
+    </div>
+  </div>
+ -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAhgPybPJ_boAQ1CdEDgnfk2b1_U7a2L_o",
@@ -29,38 +162,36 @@
     };
 
     const db = getFirestore(initializeApp(firebaseConfig));
-
     const urlParams = new URLSearchParams(window.location.search);
-    const nameParam = urlParams.get('name') || "test"; // 例: ?name=test
-    const userDocRef = doc(db, "user", nameParam);
+    const userNameParam = urlParams.get('name') || "test";
 
-    async function init() {
-      const snap = await getDoc(userDocRef);
-      if (!snap.exists()) {
-        document.getElementById("userName").innerText = "ユーザーが見つかりません";
-        return;
+    async function loadLatestHistory() {
+      // 直近の履歴を取得
+      const historyRef = collection(db, "user", userNameParam, "history");
+      const q = query(historyRef, orderBy("timestamp", "desc"), limit(1));
+      const querySnap = await getDocs(q);
+
+      if (!querySnap.empty) {
+        const latestDoc = querySnap.docs[0].data();
+        const amount = Number(latestDoc.amount) || 0;
+
+        // 金額反映
+        document.getElementById("payAmount").innerText = amount.toLocaleString();
+        
+        // ポイント計算 (0.5%還元)
+        const pts = Math.floor(amount * 0.005);
+        document.getElementById("pointNum").innerText = pts;
+
+        // タイムスタンプ反映
+        if (latestDoc.timestamp) {
+          const d = latestDoc.timestamp.toDate();
+          const dateStr = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours()}時${String(d.getMinutes()).padStart(2, '0')}分`;
+          document.getElementById("payDate").innerText = dateStr;
+        }
       }
-
-      const data = snap.data();
-      document.getElementById("userName").innerText = data.name;
-      document.getElementById("userBalance").innerText = Number(data.balance).toLocaleString();
-
-      // セキュリティ用ランダムトークン生成
-      const token = Math.random().toString(36).substring(2, 10);
-      
-      // DBへトークン保存
-      await updateDoc(userDocRef, { token: token });
-
-      // QRコードデータ構造: "test:トークン"
-      const qrText = `${data.name}:${token}`;
-      new QRCode(document.getElementById("qrcode"), {
-        text: qrText,
-        width: 180,
-        height: 180
-      });
     }
 
-    init();
+    loadLatestHistory();
   </script>
 </body>
 </html>
