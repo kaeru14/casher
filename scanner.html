@@ -474,12 +474,12 @@
     function countdata(data) {
       const priceExcludingTax = Number(data.price) || 0;
 
-      // システム用フィールド以外の購入アイテムを抽出
       const systemKeys = ['price', 'work', 'settle', 'token'];
       const goods = Object.keys(data)
         .filter(key => !systemKeys.includes(key))
         .map(key => `${key}:${data[key]}`);
 
+      // 金額計算
       const taxAmount = Math.floor(priceExcludingTax * 0.1);
       currentGrandTotal = priceExcludingTax + taxAmount;
       currentItemDetails = goods.join(", ");
@@ -495,12 +495,25 @@
         itemListElement.appendChild(row);
       });
 
+      // 表示の更新
       document.getElementById("text-subtotal").innerText = `¥${priceExcludingTax.toLocaleString()}`;
       document.getElementById("text-tax").innerText = `¥${taxAmount.toLocaleString()}`;
       document.getElementById("text-total").innerText = `¥${currentGrandTotal.toLocaleString()}`;
-      document.getElementById("text-complete-amount").innerText = `¥${currentGrandTotal.toLocaleString()}`;
-    }
 
+      // マイナス金額（返金・チャージ）時の判定処理
+      const completeTitleElement = document.getElementById("complete-title"); // 完了画面のタイトル要素
+      const completeAmountElement = document.getElementById("text-complete-amount");
+
+      if (currentGrandTotal < 0) {
+        // マイナスの場合は絶対値（正の数）にし、文字を「チャージ」へ変更
+        const positiveAmount = Math.abs(currentGrandTotal);
+        completeAmountElement.innerText = `¥${positiveAmount.toLocaleString()}`;
+        if (completeTitleElement) completeTitleElement.innerText = "チャージ完了";
+      } else {
+        completeAmountElement.innerText = `¥${currentGrandTotal.toLocaleString()}`;
+        if (completeTitleElement) completeTitleElement.innerText = "お支払い完了";
+      }
+    }
     async function onScanSuccess(decodedText) {
       if (isProcessing) return;
 
