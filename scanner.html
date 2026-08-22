@@ -347,17 +347,48 @@
     const casherRef = doc(db, "casher", "pineapple");
 
     const html5Qrcode = new Html5Qrcode("scanapp-reader");
+    // 前面カメラ（インカメラ）を優先する設定
     const config = {
       fps: 20,
       qrbox: (w, h) => ({ width: w, height: h }),
       aspectRatio: 1.0,
       videoConstraints: {
-        facingMode: "environment",
+        facingMode: "user", // 前面カメラを指定
         width: { min: 640, ideal: 1280 },
         height: { min: 480, ideal: 720 }
       },
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
+
+    function startCamera() {
+      // 前面カメラ (user) を指定して起動
+      html5Qrcode.start(
+        { facingMode: "user" },
+        config,
+        onScanSuccess
+      ).then(() => {
+        isScannerRunning = true;
+        isProcessing = false;
+      }).catch(err => {
+        console.warn("前面カメラの起動に失敗したため、利用可能なカメラで再試行します:", err);
+        // 万が一 facingMode で失敗した場合は、全デバイスから前面カメラを探して起動
+        Html5Qrcode.getCameras().then(devices => {
+          if (devices && devices.length) {
+            // "front" や "user" という名前を含むデバイス（前面カメラ）を優先選択
+            const frontCamera = devices.find(d => d.label.toLowerCase().includes("front") || d.label.toLowerCase().includes("user")) || devices[0];
+
+            html5Qrcode.start(
+              frontCamera.id,
+              config,
+              onScanSuccess
+            ).then(() => {
+              isScannerRunning = true;
+              isProcessing = false;
+            });
+          }
+        }).catch(e => console.error("カメラ取得エラー:", e));
+      });
+    }
 
     let isScannerRunning = false;
     let isProcessing = false;
@@ -430,18 +461,7 @@
       isCompleted = false;
       isProcessing = false;
     }
-    function startCamera() {
-      html5Qrcode.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess
-      ).then(() => {
-        isScannerRunning = true;
-        isProcessing = false;
-      }).catch(err => {
-        console.error("カメラの起動失敗:", err);
-      });
-    }
+
 
     function stopCamera() {
       html5Qrcode.stop().then(() => {
