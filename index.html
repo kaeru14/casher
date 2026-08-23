@@ -39,7 +39,6 @@
       gap: 12px;
     }
 
-    /* PayPay Card Area */
     .pay-card {
       background: white;
       border-radius: 16px;
@@ -48,49 +47,15 @@
       text-align: center;
     }
 
-    /* Barcode Box */
-    .barcode-box {
-      width: 90%;
-      height: 60px;
-      margin: 0 auto 8px auto;
-      background: repeating-linear-gradient(
-        90deg,
-        #000 0px, #000 2px,
-        #fff 2px, #fff 4px,
-        #000 4px, #000 8px,
-        #fff 8px, #fff 10px,
-        #000 10px, #000 13px
-      );
-    }
-    .barcode-num { font-size: 0.8rem; letter-spacing: 2px; color: #555; margin-bottom: 12px; }
-
-    /* QR Code Box */
     .qrcode-wrapper {
       position: relative;
       display: inline-block;
       margin-bottom: 8px;
     }
-    #qrcode { display: flex; justify-content: center; }
-    .qr-logo {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 32px;
-      height: 32px;
-      background-color: #ff3b30;
-      border-radius: 6px;
-      border: 2px solid white;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    #qrcode { display: flex; justify-content: center; min-height: 140px; align-items: center; }
+    
     .timer-text { font-size: 0.8rem; color: #007aff; display: flex; justify-content: center; align-items: center; gap: 4px; margin-bottom: 16px; }
 
-    /* Balance / Point Rows */
     .info-row {
       display: flex;
       justify-content: space-between;
@@ -111,7 +76,6 @@
       font-size: 0.85rem;
     }
 
-    /* Switch Style */
     .switch {
       position: relative;
       display: inline-block;
@@ -130,23 +94,6 @@
     input:checked + .slider { background-color: #007aff; }
     input:checked + .slider:before { transform: translateX(20px); }
 
-    /* Sub Button */
-    .sub-card-btn {
-      background: white;
-      border-radius: 12px;
-      padding: 12px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 0.9rem;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    /* 履歴カード表示 */
     .history-card {
       background: white;
       border-radius: 16px;
@@ -213,36 +160,10 @@
       align-items: center;
       gap: 4px;
     }
-
-    /* Bottom Action Area */
-    .bottom-box {
-      margin-top: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .camera-btn {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      color: white;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: bold;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      backdrop-filter: blur(4px);
-    }
-    .camera-btn:active { background: rgba(255, 255, 255, 0.4); }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
   <div class="app-header">
     <span class="material-symbols-outlined">arrow_back_ios</span>
     <h1>支払い</h1>
@@ -250,42 +171,37 @@
   </div>
 
   <div class="main-container">
-    <!-- PayPay Card -->
     <div class="pay-card">
-
       <div class="qrcode-wrapper">
         <div id="qrcode"></div>
       </div>
 
       <div class="timer-text">
-        <span></span>
+        <span id="qrStatusText">レジの準備を待っています...</span>
         <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>
       </div>
 
-      <!-- 利用可能額 -->
       <div class="info-row">
         <span style="font-size: 0.85rem; color: #666;">利用可能額</span>
-        <span class="info-row-right">¥<span id="displayBalance">20,500</span></span>
+        <span class="info-row-right">¥<span id="displayBalance">0</span></span>
       </div>
 
-      <!-- 残高表示 -->
       <div class="info-row" style="background: white; border: 1px solid #eee;">
         <div class="info-row-left">
           <span class="material-symbols-outlined" style="color:#007aff;">account_balance_wallet</span>
           <div>
             <div>PayPay残高</div>
-            <div style="font-size:0.75rem; color:#888; font-weight:normal;">20,000円</div>
+            <div style="font-size:0.75rem; color:#888; font-weight:normal;">残高連携中</div>
           </div>
         </div>
         <span class="material-symbols-outlined" style="color:#ccc;">chevron_right</span>
       </div>
 
-      <!-- ポイント利用スイッチ -->
       <div class="switch-row">
         <div style="display:flex; align-items:center; gap:6px;">
           <span style="color:#ff3b30; font-weight:bold;">P</span>
           <span>PayPayポイントを使う</span>
-          <span style="color:#888; font-size:0.8rem; margin-left:4px;">500 pt</span>
+          <span style="color:#888; font-size:0.8rem; margin-left:4px;">0 pt</span>
         </div>
         <label class="switch">
           <input type="checkbox" checked>
@@ -294,7 +210,6 @@
       </div>
     </div>
 
-<!-- 支払い履歴エリア -->
     <div class="history-card">
       <div class="history-title">
         <span class="material-symbols-outlined" style="color:#ff3b30; font-size:20px;">history</span>
@@ -308,6 +223,7 @@
         <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
       </button>
     </div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -326,30 +242,39 @@
     const casherRef = doc(db, "casher", "pineapple");
     const userDocRef = doc(db, "user", userNameParam);
 
-    let initialMoney = null;
+    let qrCodeObj = null;
     let allHistoryDocs = [];
 
-    // 1. QRコード生成
-    new QRCode(document.getElementById("qrcode"), {
-      text: `${userNameParam}:paypay_qr`,
-      width: 140,
-      height: 140,
-      colorDark : "#000000",
-      colorLight : "#ffffff",
-      correctLevel : QRCode.CorrectLevel.H
-    });
+    // 1. QRコード描画・更新関数
+    function updateQRCode(token) {
+      const qrcodeContainer = document.getElementById("qrcode");
+      const qrData = `${userNameParam}:${token}`;
+      
+      if (!qrCodeObj) {
+        qrcodeContainer.innerHTML = "";
+        qrCodeObj = new QRCode(qrcodeContainer, {
+          text: qrData,
+          width: 140,
+          height: 140,
+          colorDark : "#000000",
+          colorLight : "#ffffff",
+          correctLevel : QRCode.CorrectLevel.H
+        });
+      } else {
+        qrCodeObj.clear();
+        qrCodeObj.makeCode(qrData);
+      }
+    }
 
-    // 2. ユーザー残高の取得
-    async function fetchUserBalance() {
-      const snap = await getDoc(userDocRef);
+    // 2. ユーザー情報の取得・監視
+    onSnapshot(userDocRef, (snap) => {
       if (snap.exists()) {
         const bal = snap.data().balance || 0;
         document.getElementById("displayBalance").innerText = Number(bal).toLocaleString();
       }
-    }
-    fetchUserBalance();
+    });
 
-    // 3. 利用履歴の取得と描画
+    // 3. 利用履歴の取得
     async function fetchHistory() {
       const historyRef = collection(db, "user", userNameParam, "history");
       const q = query(historyRef, orderBy("timestamp", "desc"));
@@ -363,10 +288,8 @@
           return;
         }
 
-        // 初期表示：直近5件
         renderHistoryList(5);
 
-        // 5件より多い場合は「さらに表示」ボタンを表示
         if (allHistoryDocs.length > 5) {
           document.getElementById("showMoreBtn").style.display = "flex";
         }
@@ -389,7 +312,7 @@
           const d = item.timestamp.toDate();
           dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
         }
-        const storeName = item.storeName || "パイナップルレジ";
+        const storeName = item.info || item.storeName || "パイナップルレジ";
 
         const itemEl = document.createElement("div");
         itemEl.className = "history-item";
@@ -404,27 +327,30 @@
       });
     }
 
-    // 「さらに表示」ボタンタップで全件表示
     document.getElementById("showMoreBtn").addEventListener("click", () => {
-      renderHistoryList(null); // 全件描画
-      document.getElementById("showMoreBtn").style.display = "none"; // ボタンを隠す
+      renderHistoryList(null);
+      document.getElementById("showMoreBtn").style.display = "none";
     });
 
     fetchHistory();
 
-    // 4. 金額変更の監視 (moneyが変わったら success.html へ遷移)
+    // 4. レジ状態（casher）の監視とQRコード生成・遷移判定
     onSnapshot(casherRef, (snapshot) => {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
-      const currentMoney = data.money;
 
-      if (initialMoney === null) {
-        initialMoney = currentMoney;
+      // 決済完了時
+      if (data.settle === true) {
+        window.location.href = `success.html?name=${encodeURIComponent(userNameParam)}`;
         return;
       }
 
-      if ((currentMoney !== undefined && currentMoney !== initialMoney && currentMoney > 0) || data.settle === true) {
-        window.location.href = `success.html?name=${encodeURIComponent(userNameParam)}`;
+      // 会計中かつワンタイムトークンが存在する場合
+      if (data.work === true && data.token) {
+        updateQRCode(data.token);
+        document.getElementById("qrStatusText").innerText = "コードをカメラにかざしてください";
+      } else {
+        document.getElementById("qrStatusText").innerText = "レジの操作をお待ちください";
       }
     });
 
